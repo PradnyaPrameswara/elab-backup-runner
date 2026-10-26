@@ -2,7 +2,8 @@
 # Encrypted PostgreSQL export -> off-site R2 sink. Needs: pg_dump 17, age, curl.
 # Env: BACKUP_DATABASE_URL, BACKUP_ENV (prod|staging), AGE_RECIPIENT, INGEST_URL, INGEST_TOKEN, STATUS_TOKEN
 set -euo pipefail
-if [[ -z "${BACKUP_DATABASE_URL:-}" ]]; then
+if [[ "${BACKUP_ENV:-}" == "prod" ]]; then BACKUP_DATABASE_URL="${PROD_DATABASE_URL:-}"; else BACKUP_DATABASE_URL="${STAGING_DATABASE_URL:-}"; fi
+if [[ -z "$BACKUP_DATABASE_URL" ]]; then
   echo "::warning::No database URL secret for ${BACKUP_ENV:-?}; skipped. The off-site monitor reports the missing backup."
   exit 0
 fi

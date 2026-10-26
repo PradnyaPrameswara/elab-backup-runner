@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: backup
+  group: backup-${{ github.workflow }}
   cancel-in-progress: false
 
 jobs:
@@ -31,7 +31,8 @@ jobs:
       - name: Export, encrypt, upload
         env:
           BACKUP_ENV: ${{ matrix.target }}
-          BACKUP_DATABASE_URL: ${{ matrix.target == 'prod' && secrets.PROD_BACKUP_DATABASE_URL || secrets.STAGING_BACKUP_DATABASE_URL }}
+          PROD_DATABASE_URL: ${{ secrets.PROD_BACKUP_DATABASE_URL }}
+          STAGING_DATABASE_URL: ${{ secrets.STAGING_BACKUP_DATABASE_URL }}
           AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
           INGEST_URL: ${{ secrets.BACKUP_INGEST_URL }}
           INGEST_TOKEN: ${{ secrets.BACKUP_INGEST_TOKEN }}
