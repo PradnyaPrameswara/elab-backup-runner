@@ -1,0 +1,39 @@
+name: Encrypted database backup
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [prod, staging]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL 17 client and age
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-common age
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y >/dev/null
+          sudo apt-get install -y -qq postgresql-client-17
+      - name: Export, encrypt, upload
+        env:
+          BACKUP_ENV: ${{ matrix.target }}
+          BACKUP_DATABASE_URL: ${{ matrix.target == 'prod' && secrets.PROD_BACKUP_DATABASE_URL || secrets.STAGING_BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+          INGEST_URL: ${{ secrets.BACKUP_INGEST_URL }}
+          INGEST_TOKEN: ${{ secrets.BACKUP_INGEST_TOKEN }}
+          STATUS_TOKEN: ${{ secrets.BACKUP_STATUS_TOKEN }}
+        run: bash backup.sh
